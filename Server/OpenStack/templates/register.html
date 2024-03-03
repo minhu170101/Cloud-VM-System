@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng ký người dùng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth.css') }}">
+  <link rel = "icon" type = "image/png" href = "{{ url_for('static', filename='imgs/logo.png') }}">
+</head>
+<body>
+  <div id="register">
+    <div class="headerLogo">
+      <a href="{{ url_for('login') }}" style="margin-right: 23px"><img src="{{ url_for('static', filename='imgs/OpenStack.png') }}" height="20%" width="20%" class="logo"></a>
+    </div>
+    <div class="container">
+      <div id="register-row" class="row justify-content-center align-items-center">
+        <div id="register-column" class="col-md-6">
+          <div id="register-box" class="col-md-12">
+            <form id="register-form" class="form" action="{{ url_for('register') }}" method="post">
+              <h3 class="text-center text-info">Đăng ký người dùng</h3>
+              <br>
+              {% if msg %}
+              <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              {% endif %}
+              <div class="form-group">
+                <input type="text" name="fullname" id="fullname" class="form-control" placeholder="Họ tên...">
+              </div>
+              <br>
+              <div class="form-group">
+                <input type="text" name="username" id="username" class="form-control" placeholder="Tên đăng nhập...">
+              </div>
+              <br>
+              <div class="form-group">
+                <input type="password" name="password" id="password" class="form-control" placeholder="Mật khẩu...">
+              </div>
+              <br>
+              <input type="submit" name="submit" class="form-control btn btn-info btn-md" value="Đăng ký">
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

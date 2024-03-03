@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<div class="home-content">
+		<div class="content-name">
+			<span>Compute/Danh sách (Đồng bộ từ Openstack)</span>
+		</div>
+		<div class="button-listbox">
+				<div class="button-box">
+					<button type="button" class="w3-btn w3-ripple w3-green" data-toggle="modal" data-target="#taomayao">Tạo máy ảo</button>
+					<button type="button" class="w3-btn w3-ripple w3-indigo" data-toggle="modal" data-target="#taosaoluu">Tạo bản sao lưu máy ảo</button>
+					<button type="button" class="w3-btn w3-ripple w3-red" data-toggle="modal" data-target="#tatmayao">Tắt toàn bộ máy ảo</button>
+					<button type="button" class="w3-btn w3-ripple w3-green" data-toggle="modal" data-target="#khoidongmayao">Khởi động máy ảo</button>
+					<button type="button" class="w3-btn w3-ripple w3-orange" data-toggle="modal" data-target="#khoidongtoanbomayao">Khởi động toàn bộ máy ảo</button>
+				</div>
+			</div>
+		<div class="list-text">
+
+			{% with messages = get_flashed_messages() %}
+				{% if messages %}
+					{% for message in messages %}
+						<div class="alert alert-warning alert-dismissible fade show" role="alert">
+							{{ message }}
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span> </button>
+						</div>
+					{% endfor %}
+				{% endif %}
+			{% endwith %}
+
+			<span>Danh sách có {{ datalen }} máy tính ảo</span>
+		</div>
+		<div class="overview-boxes">
+		</div>
+	</div>
+
+<!-- MODAL DATA -->
+<div class="modal fade" id="cauhinh">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Các máy đã cấp quyền</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form action="{{ url_for('delete_access_vm') }}" method="post">
+					<table class="table table-striped">
+					<thead>
+					<tr>
+						<th>Tên máy vật lý</th>
+						<th>Địa chỉ MAC</th>
+						<th>User</th>
+						<th>Password</th>
+						<th>Thao Tác</th>
+					</tr>
+					</thead>
+					<tbody id="tdata">
+					</tbody>
+				</table>
+				</form>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="taomayao">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><strong>Tạo máy ảo</strong></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('create_vm') }}" method="post">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Số lượng máy ảo:</strong></label>
+						<input type="number" class="form-control" name="VM_number" value="1" placeholder="Số lượng máy ảo" required>
+					</div>
+					<div class="form-group">
+						<label><strong>Chọn hệ điều hành: </strong></label>
+						<select class="form-control" id="select_image" name="select_image">
+							{% for img in images['images'] %}
+								<option value="{{ img['id'] }}">{{ img['name'] }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="form-group">
+						<label><strong>Chọn phần cứng: </strong></label>
+						<select class="form-control" id="select_flavor" name="select_flavor">
+							{% for fl in flavors['flavors'] %}
+								<option value="{{ fl['id'] }}">Ram: {{ fl['ram'] }}MB - Ổ cứng: {{ fl['disk'] }}GB</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load" onclick="loadspin()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang tạo...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="taosaoluu">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><strong>Tạo Snapshots</strong></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('create_snapshot') }}" method="post">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Tên bản sao lưu: </strong></label>
+						<input type="text" class="form-control" name="snap_name" placeholder="Nhập tên bản sao lưu..." required>
+					</div>
+					<div class="form-group">
+						<label><strong>Chọn máy ảo: </strong></label>
+						<select class="form-control" id="select_VM" name="select_VM">
+							{% for values in data['servers'] %}
+								<option value="{{ values['id'] }}">{{ values['name'] }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load1" onclick="loadspin1()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading1" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang tạo...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="tatmayao">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Thông báo</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('shutdown_vm') }}" method="post">
+				<div class="modal-body">
+					<label><strong>Bạn muốn tắt toàn bộ máy ảo ? </strong></label>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load2" onclick="loadspin2()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading2" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang tắt...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="khoidongmayao">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><strong>Khởi dộng máy ảo</strong></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('start_vm') }}" method="post">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Chọn máy ảo: </strong></label>
+						<select class="form-control" id="select_VM" name="select_VM">
+							{% for values in data['servers'] %}
+							{% if values['OS-EXT-STS:power_state'] != 1 %}
+								<option value="{{ values['id'] }}">{{ values['name'] }}</option>
+							{% endif %}
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load3" onclick="loadspin3()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading3" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang khởi động...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="khoidongtoanbomayao">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Thông báo</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('start_all_vm') }}" method="post">
+				<div class="modal-body">
+					<label><strong>Bạn muốn khởi động toàn bộ máy ảo ? </strong></label>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load4" onclick="loadspin4()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading4" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang khởi động...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="xoamayao">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Thông báo</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('delete_vm') }}" method="post">
+				<div class="modal-body">
+					<input type="text" name="vm_id" id="vm_id" hidden>
+					<label><strong>Bạn muốn xóa máy ảo này ? </strong></label>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load5" onclick="loadspin5()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading5" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang xóa...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	function loadspin(){
+		document.getElementById("load").hidden = true;
+		document.getElementById("loading").hidden = false;
+	}
+	function loadspin1(){
+		document.getElementById("load1").hidden = true;
+		document.getElementById("loading1").hidden = false;
+	}
+	function loadspin2(){
+		document.getElementById("load2").hidden = true;
+		document.getElementById("loading2").hidden = false;
+	}
+	function loadspin3(){
+		document.getElementById("load3").hidden = true;
+		document.getElementById("loading3").hidden = false;
+	}
+	function loadspin4(){
+		document.getElementById("load4").hidden = true;
+		document.getElementById("loading4").hidden = false;
+	}
+	function loadspin5(){
+		document.getElementById("load5").hidden = true;
+		document.getElementById("loading5").hidden = false;
+	}
+</script>
+
+<script type="text/javascript">
+        var socket = io.connect('http://172.20.60.2:5000/data');
+        var id = [];
+		var VM_name = [];
+		var power_state = [];
+		var network = [];
+        socket.on('VM_data', function(data) {
+
+			// Get Data
+            for(let i = 0; i < data['servers'].length; i++)
+            {
+            	id[i] = data['servers'][i]['id']
+            	VM_name[i] = data['servers'][i]['name']
+            	if ( data['servers'][i]['addresses']['Net_cloud'] != null )
+            	{
+					if ( data['servers'][i]['addresses']['Net_cloud'].length > 1 )
+					{
+						network[i] = data['servers'][i]['addresses']['Net_cloud'][1]['addr']
+					}
+					else
+					{
+						network[i] = "Chưa cấp IP"
+					}
+				}
+
+            	if( data['servers'][i]['OS-EXT-STS:power_state'] == 1)
+            	{
+            		power_state[i] = "RUNNING"
+            	}
+            	else if( data['servers'][i]['OS-EXT-STS:power_state'] == 3)
+            	{
+					power_state[i] = "PAUSED"
+            	}
+            	else if( data['servers'][i]['OS-EXT-STS:power_state'] == 4)
+            	{
+					power_state[i] = "SHUTDOWN"
+            	}
+            	else if( data['servers'][i]['OS-EXT-STS:power_state'] == 6)
+            	{
+					power_state[i] = "CRASHED"
+            	}
+            	else if( data['servers'][i]['OS-EXT-STS:power_state'] == 7)
+            	{
+					power_state[i] = "SUSPENDED"
+            	}
+            }
+
+            // Show data
+            for(let i = 0; i < VM_name.length; i++)
+            {
+                if( $('#'+id[i]).attr('id') == id[i] )
+                {
+                    document.getElementById("VM_name "+id[i]).innerHTML = VM_name[i];
+                    document.getElementById("state "+id[i]).innerHTML = power_state[i];
+                    document.getElementById("network "+id[i]).innerHTML = network[i];
+                }
+                else
+                {
+                    $(".overview-boxes").append(
+                    "<div class='box' id='" + id[i] + "'>" +
+                    	"<div class='right-side'>" +
+                    		"<div class='box-topic'>" +
+                    			"<span class='title'>PC Name: </span>" +
+								"<span class='detail' id='VM_name " + id[i] + "'>" + VM_name[i] + "</span>" +
+							"</div>" +
+							"<div class='box-topic'>" +
+								"<span class='title'>Trạng thái: </span>" +
+								"<span class='detail' id='state " + id[i] + "'>" + power_state[i] + "</span>"+
+							"</div>" +
+							"<div class='box-topic'>" +
+								"<span class='title'>Số tài khoản: </span>" +
+								"<span class='detail'>2</span>" +
+							"</div>" +
+							"<div class='box-topic'>" +
+								"<span class='title'>Địa chỉ IP: </span>" +
+								"<span class='detail' id='network " + id[i] + "'>" + network[i] + "</span>" +
+							"</div>" +
+							"<button type='button' class='left-btn view_data' name='view' id='" + id[i] + "' value='view'>" +
+								"<i class='bx bx-cog'></i>" +
+								"<span>Cấu hình</span>" +
+							"</button>" +
+							"<button type='button' class='xoamayao right-btn' data-toggle='modal' data-target='#xoamayao' data-id='" + id[i] + "'>" +
+								"<i class='bx bx-trash'></i>" +
+								"<span>Xóa VM</span>" +
+							"</button>" +
+						"</div>" +
+					"</div>"
+
+                    );
+                }
+
+            }
+       	});
+</script>
+
+<script type="text/javascript">
+	$(document).on("click", ".xoamayao", function () {
+		 var vm_id = $(this).data('id');
+		 document.getElementById("vm_id").value = vm_id;
+     });
+
+
+	$(document).ready(function(){
+		$("#cauhinh").on('hide.bs.modal', function(){
+			$("#tdata").empty();
+	  	});
+		$(document).on('click', '.view_data', function(){
+			var VM_id = $(this).attr("id");
+			$.ajax({
+				url:"/select",
+	   			method:"POST",
+	   			data:{VM_id:VM_id},
+	   			success:function(data){
+					$('#cauhinh').modal('show');
+					var data_rs = JSON.parse(data);
+					if (!jQuery.isEmptyObject(data_rs))
+					{
+						data_rs.forEach(function(dt){
+							$("#tdata").append("<tr>"+
+								"<td style='display:none;'><input hidden type='text' name='id' value='"+dt['id']+"'></td>"+
+								"<td>"+dt['PM_name']+"</td>"+
+								"<td>"+dt['mac_addr']+"</td>"+
+								"<td>"+dt['username']+"</td>"+
+								"<td>"+dt['password']+"</td>"+
+								"<td><button type='submit' class='btn btn-danger'>Xóa</button></td>"
+							+"</tr>"
+							);
+						});
+					}
+	   			}
+	  		});
+	 	});
+});
+</script>
+{% endblock %}

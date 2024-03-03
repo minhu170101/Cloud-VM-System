@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<div class="home-content">
+		<div class="content-name">
+			<span>Máy tính vật lý / Quyền truy cập máy ảo</span>
+		</div>
+		<div class="button-listbox">
+			<div class="button-box">
+				<button type="button" class="w3-btn w3-ripple w3-light-blue" data-toggle="modal" data-target="#taomayvatly">Tạo máy tính mẫu</button>
+				<button type="button" class="w3-btn w3-ripple w3-light-blue" data-toggle="modal" data-target="#capquyen">Cấp quyền truy cập máy ảo</button>
+				<button type="button" class="w3-btn w3-ripple w3-light-blue" data-toggle="modal" data-target="#danhsachpm">Danh sách máy vật lý</button>
+			</div>
+		</div>
+		<div class="list-text">
+			{% if msg %}
+			<div class="alert alert-warning alert-dismissible fade show" role="alert">
+			  {{ msg }}
+			  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			  </button>
+			</div>
+			{% endif %}
+
+			{% with messages = get_flashed_messages() %}
+				{% if messages %}
+					{% for message in messages %}
+						<div class="alert alert-warning alert-dismissible fade show" role="alert">
+							{{ message }}
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span> </button>
+						</div>
+					{% endfor %}
+				{% endif %}
+			{% endwith %}
+
+			<span>Danh sách có {{ request_access | length }} quyền truy cập</span>
+		</div>
+		<div class="overview-boxes">
+			{% for request in request_access %}
+			<form class="box">
+				<div class="right-side">
+					<div hidden>
+						<input name="id" value="{{ request['id'] }}">
+					</div>
+					<div class="box-topic" style="border-bottom: 1px solid black;">
+						<span class="detail" name="PM_name">{{ request['PM_name'] }}</span>
+					</div>
+					<div class="box-topic">
+						<span class="title">Tên máy ảo:</span>
+						<span class="detail" name="VM_name">{{ request['VM_name'] }}</span>
+					</div>
+					<div class="box-topic">
+						<span class="title">User:</span>
+						<span class="detail" name="username">{{ request['username'] }}</span>
+					</div>
+					<div class="box-topic">
+						<span class="title">Địa chỉ IP:</span>
+						<span class="detail" name="ip_addr">{{ request['ip_addr'] }}</span>
+					</div>
+					<div class="box-topic">
+						<span class="title">MAC:</span>
+						<span class="detail" name="mac_addr">{{ request['mac_addr'] }}</span>
+					</div>
+					<div class="box-topic">
+						<span class="title">Truy cập lần cuối:</span>
+						<span class="detail" name="time_log">{{ request['time_log'] }}</span>
+					</div>
+					<button type="button" class="left-btn">
+						<i class='bx bx-cog'></i>
+						<span>Cấu hình</span>
+					</button>
+					<button type="button" class="xoamayvatly right-btn" data-toggle="modal" data-target="#xoamayvatly" data-id="{{ request['id'] }}">
+						<i class='bx bx-trash'></i>
+						<span>Xóa PM</span>
+					</button>
+				</div>
+			</form>
+			{% endfor %}
+		</div>
+	</div>
+
+
+<!-- MODAL DATA -->
+<div class="modal fade" id="taomayvatly">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><strong>Tạo máy vật lý</strong></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('create_pm') }}" method="post">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Tên máy vật lý:</strong></label>
+						<input type="text" class="form-control" name="name" placeholder="Nhập tên máy">
+					</div>
+					<div class="form-group">
+						<label><strong>Địa chỉ MAC: </strong></label>
+						<input type="text" class="form-control" name="MAC_addr" placeholder="Nhập địa chỉ MAC">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load" onclick="loadspin()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang tạo...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="capquyen">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><strong>Cấp quyền truy cập vào máy ảo</strong></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('request_access') }}" method="post">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Chọn máy ảo:</strong></label>
+						<select class="form-control" id="select_VM" name="select_VM">
+							{% for values in data['servers'] %}
+							{% if values['addresses']['Net_cloud'] |length > 1 %}
+								<option value="{ '{{ values['id'] }}': ['{{ values['name'] }}', '{{ values['addresses']['Net_cloud'][1]['addr'] }}'] }">{{ values['name'] }}</option>
+							{% endif %}
+							{% endfor %}
+						</select>
+					</div>
+					<div class="form-group">
+						<label><strong>Chọn máy vật lý: </strong></label>
+						<select class="form-control" id="select_PM" name="select_PM">
+							{% for pm in pms %}
+								<option value="{ '{{ pm['MAC_addr'] }}': '{{ pm['name'] }}' }">{{ pm['name'] }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load1" onclick="loadspin1()">Cấp quyền</button>
+					<button class="btn btn-primary" type="button" id="loading1" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang cấp quyền...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Hủy</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="danhsachpm">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Danh sách máy tính vật lý</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Tên máy vật lý</th>
+							<th>Địa chỉ MAC</th>
+							<th>Thao Tác</th>
+						</tr>
+					</thead>
+					{% for pm in pms %}
+					<form action="{{ url_for('delete_pm') }}" method="post">
+						<tbody>
+							<input name="id" value="{{ pm['id'] }}" hidden="">
+							<tr>
+								<td>{{ pm['name'] }}</td>
+								<td>{{ pm['MAC_addr'] }}</td>
+								<td><button type='submit' class='btn btn-danger'>Xóa</button></td>
+							</tr>
+
+						</tbody>
+					</form>
+					{% endfor %}
+				</table>
+
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="xoamayvatly">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Thông báo</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<form action="{{ url_for('delete_access_pm') }}" method="post">
+				<div class="modal-body">
+					<input type="text" name="id" id="id" hidden>
+					<label><strong>Bạn muốn xóa quyền này này ? </strong></label>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary" id="load2" onclick="loadspin2()">Xác nhận</button>
+					<button class="btn btn-primary" type="button" id="loading2" disabled hidden>
+						<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+						Đang xóa...
+					</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	function loadspin(){
+		document.getElementById("load").hidden = true;
+		document.getElementById("loading").hidden = false;
+	}
+	function loadspin1(){
+		document.getElementById("load1").hidden = true;
+		document.getElementById("loading1").hidden = false;
+	}
+	function loadspin2(){
+		document.getElementById("load2").hidden = true;
+		document.getElementById("loading2").hidden = false;
+	}
+</script>
+
+<script type="text/javascript">
+	$(document).on("click", ".xoamayvatly", function () {
+		 var id = $(this).data('id');
+		 document.getElementById("id").value = id;
+     });
+</script>
+{% endblock %}
