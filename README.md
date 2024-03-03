@@ -12,9 +12,9 @@ The system utilizes resources provided on the OpenStack cloud through the OpenSt
 * OpenStack
 ## ScreenShots
 ### Server Side
-Virtual Machine Management Page
+#### Virtual Machine Management Page
 ![VM](https://github.com/minhu170101/Cloud-VM-System/assets/162015588/7983095a-695b-42f0-b879-2e16e808e70b)
-Physical Computer Management Page
+#### Physical Computer Management Page
 ![PM](https://github.com/minhu170101/Cloud-VM-System/assets/162015588/c8e3e765-eec3-4293-a832-2767f4da5f87)
 ### Client Side
 ![Client](https://github.com/minhu170101/Cloud-VM-System/assets/162015588/fd6468f0-ed2d-4d14-aead-e36cf8b041fa)
